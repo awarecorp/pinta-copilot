@@ -93,7 +93,21 @@ class Transport {
                 signal: ctrl.signal,
             });
             if (!res.ok) {
-                process.stderr.write(`[pinta-cc] OTLP POST ${res.status}\n`);
+                let body = "";
+                try {
+                    body = (await res.text()).slice(0, 200);
+                }
+                catch {
+                    /* ignore */
+                }
+                const hint = res.status === 401 || res.status === 403
+                    ? " — check OTEL_EXPORTER_OTLP_HEADERS (relay token)"
+                    : res.status === 404
+                        ? " — check OTEL_EXPORTER_OTLP_TRACES_ENDPOINT path"
+                        : res.status >= 500
+                            ? " — collector may be down"
+                            : "";
+                process.stderr.write(`[pinta-cc] OTLP POST ${res.status} ${opts.endpoint}${hint}${body ? ` body=${body}` : ""}\n`);
                 return false;
             }
             return true;
