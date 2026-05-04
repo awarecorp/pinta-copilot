@@ -21,10 +21,22 @@ function parseHeadersEnv(raw: string | undefined): Record<string, string> {
 }
 
 function getOptions(): TransportOptions | null {
-  const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+  // OTLP/HTTP spec: TRACES_ENDPOINT is the full URL (no append by exporter);
+  // ENDPOINT is a base URL the SDK appends /v1/traces to. We treat the
+  // value as a full URL — env-bridge maps CLAUDE_PLUGIN_OPTION_ENDPOINT to
+  // TRACES_ENDPOINT specifically. For OSS users who set ENDPOINT directly,
+  // assume base URL and append /v1/traces.
+  const tracesEndpoint = process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
+  const baseEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+  let endpoint: string | undefined;
+  if (tracesEndpoint) {
+    endpoint = tracesEndpoint.replace(/\/+$/, "");
+  } else if (baseEndpoint) {
+    endpoint = baseEndpoint.replace(/\/+$/, "") + "/v1/traces";
+  }
   if (!endpoint) return null;
   return {
-    endpoint: endpoint.replace(/\/+$/, ""),
+    endpoint,
     headers: parseHeadersEnv(process.env.OTEL_EXPORTER_OTLP_HEADERS),
   };
 }
@@ -71,7 +83,8 @@ export class Transport {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
     try {
-      const res = await fetch(`${opts.endpoint}/traces`, {
+      // opts.endpoint is the full traces URL — no path append.
+      const res = await fetch(opts.endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
