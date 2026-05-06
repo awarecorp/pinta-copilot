@@ -35,5 +35,9 @@ function bridgeUserConfigToOtelEnv() {
         process.env.OTEL_EXPORTER_OTLP_HEADERS =
             `x-pinta-relay-token=${process.env.CLAUDE_PLUGIN_OPTION_API_KEY}`;
     }
+    // Expose for guard.ts (~/guard/evaluate auth header)
+    if (!process.env.PINTA_RELAY_TOKEN && process.env.CLAUDE_PLUGIN_OPTION_API_KEY) {
+        process.env.PINTA_RELAY_TOKEN = process.env.CLAUDE_PLUGIN_OPTION_API_KEY;
+    }
 }
 //# sourceMappingURL=env-bridge.js.map
