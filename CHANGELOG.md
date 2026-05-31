@@ -2,6 +2,25 @@
 
 All notable changes to pinta-cc are documented here.
 
+## [1.3.1] - 2026-05-31
+
+### Added
+
+- `GuardResult.userMessage` — the PreToolUse guard now reads a pre-formatted
+  `userMessage` field from the manager's `/guard/evaluate` response and
+  surfaces it as the `permissionDecisionReason` on a DENY. This carries the
+  "Blocked by Pinta AI" brand text + rule name straight to the LLM/user.
+
+### Changed
+
+- On a guard DENY, `permissionDecisionReason` now prefers `userMessage`, then
+  falls back to the raw `reason`, then to the `'guard_deny'` literal.
+
+### Compatibility
+
+- Forward-compatible. Older managers that don't emit `userMessage` leave the
+  field as `null`, and the handler falls back to `reason` exactly as before.
+
 ## [1.3.0] - 2026-05-26
 
 ### Added
