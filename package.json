@@ -26,6 +26,7 @@
     "mock-server": "npx tsx tools/mock-server.ts",
     "install-hooks": "node dist/tools/install-hooks.js",
     "uninstall-hooks": "node dist/tools/install-hooks.js --uninstall",
+    "doctor": "node dist/tools/doctor.js",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {

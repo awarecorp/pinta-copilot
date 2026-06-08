@@ -11,6 +11,8 @@ import {
   type RawEvent,
   classify,
   isGuardEvent,
+  isInternalTool,
+  formatDeny,
   sessionId as getSessionId,
   toolName as getToolName,
   toolInput as getToolInput,
@@ -51,14 +53,16 @@ async function main(): Promise<void> {
       kind === "UserPromptSubmit" ? trace.newTrace(sid) : trace.currentTrace(sid);
 
     // Guard runs on the two tool-gating events (PreToolUse: all surfaces;
-    // PermissionRequest: CLI-only — ext simply never fires it).
+    // PermissionRequest: CLI-only). Internal agent tools (report_intent,
+    // ask_user) are telemetry-only — never guarded (would brick the turn).
+    const toolNm = getToolName(event);
     let guard = null;
-    if (isGuardEvent(kind)) {
+    if (isGuardEvent(kind) && !isInternalTool(toolNm)) {
       const ti = getToolInput(event);
       guard = await evaluateGuard(
         {
           spanId: sid ?? "unknown",
-          toolName: getToolName(event),
+          toolName: toolNm,
           toolInput: ti,
           rawTextFields: {
             toolInput: typeof ti === "string" ? ti : JSON.stringify(ti ?? null),
@@ -74,22 +78,8 @@ async function main(): Promise<void> {
 
     // Enforcement: emit a deny decision in the format the firing event expects.
     if (guard?.decision === "DENY") {
-      const reason = guard.userMessage ?? guard.reason ?? "guard_deny";
-      if (kind === "PreToolUse") {
-        process.stdout.write(
-          JSON.stringify({
-            hookSpecificOutput: {
-              hookEventName: "PreToolUse",
-              permissionDecision: "deny",
-              permissionDecisionReason: reason,
-            },
-          }) + "\n",
-        );
-      } else if (kind === "PermissionRequest") {
-        process.stdout.write(
-          JSON.stringify({ behavior: "deny", message: reason }) + "\n",
-        );
-      }
+      const out = formatDeny(kind, guard.userMessage ?? guard.reason ?? "guard_deny");
+      if (out) process.stdout.write(out + "\n");
     }
   } catch (err) {
     process.stderr.write(`[pinta-copilot] error: ${err}\n`);

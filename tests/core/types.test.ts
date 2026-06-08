@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { classify, eventName, sessionId, toolName, toolInput, isGuardEvent } from '../../src/core/types';
+import { classify, eventName, sessionId, toolName, toolInput, isGuardEvent, isInternalTool, formatDeny } from '../../src/core/types';
 
 describe('types — 3-way discriminator + field absorption', () => {
   it('resolves event name from hook_event_name / hookEventName / hookName', () => {
@@ -48,5 +48,20 @@ describe('types — 3-way discriminator + field absorption', () => {
     expect(isGuardEvent('PermissionRequest')).toBe(true);
     expect(isGuardEvent('PostToolUse')).toBe(false);
     expect(isGuardEvent('Stop')).toBe(false);
+  });
+
+  it('internal tools (report_intent, ask_user) are telemetry-only', () => {
+    expect(isInternalTool('report_intent')).toBe(true);
+    expect(isInternalTool('ask_user')).toBe(true);
+    expect(isInternalTool('bash')).toBe(false);
+    expect(isInternalTool(undefined)).toBe(false);
+  });
+
+  it('formatDeny renders per-event deny format (null for non-gating)', () => {
+    expect(JSON.parse(formatDeny('PreToolUse', 'r')!)).toEqual({
+      hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: 'r' },
+    });
+    expect(JSON.parse(formatDeny('PermissionRequest', 'r')!)).toEqual({ behavior: 'deny', message: 'r' });
+    expect(formatDeny('PostToolUse', 'r')).toBeNull();
   });
 });

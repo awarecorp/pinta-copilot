@@ -112,6 +112,19 @@ export function isGuardEvent(kind: EventKind): boolean {
   return kind === "PreToolUse" || kind === "PermissionRequest";
 }
 
+/**
+ * Internal agent tools that are NOT subject to guard enforcement — they get
+ * telemetry only (decision: per user policy 2026-06-08). `report_intent` and
+ * `ask_user` are the agent's own control tools, not user-facing actions;
+ * denying them would brick the turn without security benefit (they also fire
+ * preToolUse, observed in §9.6). The span is still emitted; guard is skipped.
+ */
+const INTERNAL_TOOLS: ReadonlySet<string> = new Set(["report_intent", "ask_user"]);
+
+export function isInternalTool(name: string | undefined): boolean {
+  return name !== undefined && INTERNAL_TOOLS.has(name);
+}
+
 // --- Hook deny output formats (one per gating event) ---
 
 /** preToolUse decision-control — honored by CLI, ext, and cloud. */
@@ -128,4 +141,25 @@ export interface PermissionRequestDenyOutput {
   behavior: "deny";
   message: string;
   interrupt?: boolean;
+}
+
+/**
+ * Render the deny decision in the format the firing event expects, or null if
+ * the event isn't a gating event. preToolUse uses `permissionDecision`; the CLI
+ * permission service uses `behavior`/`message`.
+ */
+export function formatDeny(kind: EventKind, reason: string): string | null {
+  if (kind === "PreToolUse") {
+    return JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: reason,
+      },
+    });
+  }
+  if (kind === "PermissionRequest") {
+    return JSON.stringify({ behavior: "deny", message: reason });
+  }
+  return null;
 }

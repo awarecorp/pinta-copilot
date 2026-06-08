@@ -16,7 +16,9 @@ export interface GuardResult {
   failOpenReason?: 'timeout' | 'refused' | 'error';
 }
 
-const TIMEOUT_MS = 50;
+// Guard must be fast or fail-open. 50ms default keeps the hook snappy;
+// override for slower relays (or test harnesses) via PINTA_GUARD_TIMEOUT_MS.
+const TIMEOUT_MS = Number(process.env.PINTA_GUARD_TIMEOUT_MS) || 50;
 
 function sleep(ms: number): Promise<never> {
   return new Promise((_, reject) =>
