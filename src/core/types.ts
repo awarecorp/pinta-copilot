@@ -28,12 +28,25 @@ function str(v: unknown): string | undefined {
 }
 
 /**
- * Resolve the hook event name across ALL THREE discriminator keys Copilot uses:
- * `hook_event_name` (CLI/ext snake), `hookEventName` (camelCase variant),
- * `hookName` (CLI permissionRequest). Verified §9.6.
+ * Resolve the hook event name. Copilot is inconsistent across surfaces/events:
+ *  - snake `hook_event_name` (CLI/ext most events)
+ *  - camel `hookEventName`
+ *  - `hookName` (CLI permissionRequest)
+ *  - NONE AT ALL — CLI `subagentStart` ships only camelCase agent fields with
+ *    no event-name key (verified 2026-06-08, real adapter e2e).
+ *
+ * Final fallback: `PINTA_COPILOT_EVENT`, which `install-hooks` stamps into each
+ * hook entry's `env` block (Copilot passes hook `env` through to the process —
+ * H4). So we always know the event even when the payload omits it. The payload
+ * discriminator wins when present.
  */
 export function eventName(e: RawEvent): string | undefined {
-  return str(e.hook_event_name) ?? str(e.hookEventName) ?? str(e.hookName);
+  return (
+    str(e.hook_event_name) ??
+    str(e.hookEventName) ??
+    str(e.hookName) ??
+    (process.env.PINTA_COPILOT_EVENT || undefined)
+  );
 }
 
 /** session id — `session_id` (CLI/ext) or `sessionId` (permissionRequest camel). */

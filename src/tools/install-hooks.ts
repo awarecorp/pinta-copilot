@@ -58,7 +58,9 @@ function buildHooksFile(): string {
   const cmd = `${process.execPath} ${adapterEntry()}`;
   const hooks: Record<string, unknown> = {};
   for (const ev of EVENTS) {
-    hooks[ev] = [{ type: "command", command: cmd }];
+    // Stamp the registered event name into env as a fail-safe discriminator —
+    // some payloads (CLI subagentStart) omit any hook-name field entirely.
+    hooks[ev] = [{ type: "command", command: cmd, env: { PINTA_COPILOT_EVENT: ev } }];
   }
   return JSON.stringify(
     {

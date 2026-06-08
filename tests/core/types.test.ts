@@ -27,6 +27,22 @@ describe('types — 3-way discriminator + field absorption', () => {
     expect(toolInput({ toolArgs: { y: 2 } })).toEqual({ y: 2 });
   });
 
+  it('falls back to PINTA_COPILOT_EVENT when payload has no discriminator (CLI subagentStart)', () => {
+    // real CLI subagentStart: camelCase agent fields, NO hook-name key
+    const e = { sessionId: 's', cwd: '/t', agentName: 'general-purpose', agentDisplayName: 'General Purpose Agent' };
+    expect(eventName(e)).toBeUndefined();
+    expect(classify(e)).toBe('Unknown');
+    process.env.PINTA_COPILOT_EVENT = 'SubagentStart';
+    try {
+      expect(eventName(e)).toBe('SubagentStart');
+      expect(classify(e)).toBe('SubagentStart');
+      // payload discriminator still wins over env
+      expect(eventName({ hook_event_name: 'PreToolUse' })).toBe('PreToolUse');
+    } finally {
+      delete process.env.PINTA_COPILOT_EVENT;
+    }
+  });
+
   it('guard fires on PreToolUse + PermissionRequest only', () => {
     expect(isGuardEvent('PreToolUse')).toBe(true);
     expect(isGuardEvent('PermissionRequest')).toBe(true);
