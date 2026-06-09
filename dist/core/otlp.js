@@ -13,9 +13,9 @@ const redact_js_1 = require("./redact.js");
 const types_js_1 = require("./types.js");
 const SDK_VERSION = "0.1.0"; // keep in sync with package.json
 /**
- * Copilot CLI/ext version is not reliably discoverable from the hook process
- * env (unlike Claude Code's CLAUDE_CODE_EXECPATH). Read an optional override,
- * else "unknown" — a missing version must never fail the hook.
+ * Copilot CLI/ext version isn't reliably discoverable from the hook process
+ * env. Read an optional `COPILOT_CLI_VERSION` override, else "unknown" — a
+ * missing version must never fail the hook.
  */
 function getCopilotVersion() {
     return process.env.COPILOT_CLI_VERSION || "unknown";

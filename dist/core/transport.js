@@ -16,16 +16,18 @@ function parseHeadersEnv(raw) {
     return out;
 }
 function getOptions() {
-    // OTLP/HTTP spec: TRACES_ENDPOINT is the full URL (no append by exporter);
-    // ENDPOINT is a base URL the SDK appends /v1/traces to. We treat the
-    // value as a full URL — env-bridge maps CLAUDE_PLUGIN_OPTION_ENDPOINT to
-    // TRACES_ENDPOINT specifically. For OSS users who set ENDPOINT directly,
-    // assume base URL and append /v1/traces.
-    const tracesEndpoint = process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
+    // Config is namespaced to COPILOT_PLUGIN_OPTION_* so it never collides with
+    // Copilot's own native OTel feature, which reads the standard
+    // OTEL_EXPORTER_OTLP_* vars. COPILOT_PLUGIN_OPTION_ENDPOINT is the full
+    // traces URL. OTEL_EXPORTER_OTLP_* are honored as a lower-priority fallback
+    // for OSS users who prefer the standard names. (ENDPOINT, without /v1/traces,
+    // is a base URL we append to.)
+    const fullEndpoint = process.env.COPILOT_PLUGIN_OPTION_ENDPOINT ||
+        process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
     const baseEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
     let endpoint;
-    if (tracesEndpoint) {
-        endpoint = tracesEndpoint.replace(/\/+$/, "");
+    if (fullEndpoint) {
+        endpoint = fullEndpoint.replace(/\/+$/, "");
     }
     else if (baseEndpoint) {
         endpoint = baseEndpoint.replace(/\/+$/, "") + "/v1/traces";
@@ -34,7 +36,7 @@ function getOptions() {
         return null;
     return {
         endpoint,
-        headers: parseHeadersEnv(process.env.OTEL_EXPORTER_OTLP_HEADERS),
+        headers: parseHeadersEnv(process.env.COPILOT_PLUGIN_OPTION_HEADERS || process.env.OTEL_EXPORTER_OTLP_HEADERS),
     };
 }
 class Transport {

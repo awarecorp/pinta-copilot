@@ -25,7 +25,7 @@ class RetryQueue {
             this.trim();
         }
         catch (err) {
-            process.stderr.write(`[pinta-cc] retry-queue enqueue failed: ${err}\n`);
+            process.stderr.write(`[pinta-copilot] retry-queue enqueue failed: ${err}\n`);
         }
     }
     /**
@@ -64,7 +64,7 @@ class RetryQueue {
             fs_1.default.writeFileSync(this.filePath, entries.map((e) => JSON.stringify(e)).join("\n") + "\n");
         }
         catch (err) {
-            process.stderr.write(`[pinta-cc] retry-queue rewrite failed: ${err}\n`);
+            process.stderr.write(`[pinta-copilot] retry-queue rewrite failed: ${err}\n`);
         }
     }
     /**
@@ -83,7 +83,7 @@ class RetryQueue {
             }
             catch (err) {
                 if (err?.code !== "EEXIST") {
-                    process.stderr.write(`[pinta-cc] retry-queue lock open failed: ${err}\n`);
+                    process.stderr.write(`[pinta-copilot] retry-queue lock open failed: ${err}\n`);
                     return false;
                 }
                 // Stale lock detection: if mtime is older than 30s, drop it.
@@ -119,7 +119,7 @@ class RetryQueue {
         if (entries.length <= MAX_ENTRIES)
             return;
         const drop = entries.length - MAX_ENTRIES;
-        process.stderr.write(`[pinta-cc] retry-queue full, dropping ${drop} oldest entries\n`);
+        process.stderr.write(`[pinta-copilot] retry-queue full, dropping ${drop} oldest entries\n`);
         this.rewrite(entries.slice(drop));
     }
 }

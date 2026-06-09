@@ -45,13 +45,17 @@ check(true, hookOk, "hook file installed", hookDetail);
 // 3. env file (optional) + OTel endpoint configured (required for telemetry)
 const hasEnvFile = node_fs_1.default.existsSync(envFile);
 check(false, hasEnvFile, "env file present", hasEnvFile ? envFile : `${envFile} (none — config may come from process.env)`);
-let endpoint = process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+let endpoint = process.env.COPILOT_PLUGIN_OPTION_ENDPOINT ||
+    process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 if (!endpoint && hasEnvFile) {
-    const m = node_fs_1.default.readFileSync(envFile, "utf-8").match(/OTEL_EXPORTER_OTLP_(?:TRACES_)?ENDPOINT=(.+)/);
+    const m = node_fs_1.default
+        .readFileSync(envFile, "utf-8")
+        .match(/(?:COPILOT_PLUGIN_OPTION_ENDPOINT|OTEL_EXPORTER_OTLP_(?:TRACES_)?ENDPOINT)=(.+)/);
     if (m)
         endpoint = m[1].trim();
 }
-check(true, Boolean(endpoint), "OTLP traces endpoint configured", endpoint || "(unset — spans will be dropped)");
+check(true, Boolean(endpoint), "traces endpoint configured", endpoint || "(unset — spans will be dropped)");
 // 4. guard endpoint (optional)
 let guardEp = process.env.PINTA_GUARD_ENDPOINT;
 if (!guardEp && hasEnvFile) {

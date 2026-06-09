@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // `env` blocks always win (D5).
 const env_file_js_1 = require("./env-file.js");
 (0, env_file_js_1.loadEnvFile)();
-const env_bridge_js_1 = require("./core/env-bridge.js");
 const config_js_1 = require("./core/config.js");
 const surface_js_1 = require("./core/surface.js");
 const types_js_1 = require("./core/types.js");
@@ -20,8 +19,6 @@ async function readStdin() {
     return Buffer.concat(chunks).toString("utf-8");
 }
 async function main() {
-    // Bridge plugin-option env (if any) to OTel env. No-op for direct-install.
-    (0, env_bridge_js_1.bridgeUserConfigToOtelEnv)();
     // ⚠️ CLI preToolUse hooks are FAIL-CLOSED: a non-zero exit / crash / timeout
     // DENIES the tool — and a crashing hook bricks the whole agent (report_intent
     // / ask_user get blocked too, verified §9.6). Therefore this process MUST
